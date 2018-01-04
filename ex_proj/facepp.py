@@ -16,7 +16,7 @@ img_list = os.listdir(pic_path)
 count = 0
 success_count = 0
 
-logmsg = ''
+# logmsg = ''
 
 def face_detect(img):
     imgpath = os.path.join(pic_path, img)
