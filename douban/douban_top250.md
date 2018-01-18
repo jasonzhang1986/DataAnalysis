@@ -1,4 +1,6 @@
+### 要求：通过 requests 请求， 通过 lxml 的 xpath 方式解析字段，并将结果保存到 excel 中。
 
+不多说直接 show the code
 
 ```python
 import requests
@@ -107,7 +109,7 @@ for i in range(10): #一共10页
 #输出一下看看结果
 print(result_title)
 for r in result:
-    print(r) 
+    print(r)
 
 #保存到csv中， newline字段是设置换行，默认是'\n'，会直接在csv中插入空行
 csvfile = open('douban_top250.csv', 'w', encoding='gb18030', newline='')
@@ -647,4 +649,3 @@ csvfile.close() #最后关闭文件
     ('月球', '邓肯·琼斯', '山姆·洛克威尔', '2009', '英国', '剧情 科幻 悬疑', '8.5')
     ('巴黎淘气帮', 'L', '马克西姆·戈达尔', '2009', '法国 比利时', '儿童 喜剧 家庭', '8.6')
     ('与狼共舞', 'Kevin', 'Kevin', '1990', '美国', '冒险 剧情 西部', '8.9')
-    
