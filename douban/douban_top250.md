@@ -132,3 +132,5 @@ csvfile.close() #最后关闭文件
 ![img](douban_top250.png)
 
 so Easy 吧！
+
+xpath 的使用技巧参考 [使用requests和lxml编写python爬虫小记](http://x-wei.github.io/python_crawler_requests_lxml.html)
