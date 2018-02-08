@@ -8,65 +8,47 @@ import time
 from bs4 import BeautifulSoup
 import random
 
-headers = {}
-headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-headers["Accept-Encoding"] = "gzip, deflate, sdch"
-headers["Accept-Language"] = "zh-CN,zh;q=0.8,en;q=0.6,zh-TW;q=0.4,ja;q=0.2"
-# headers["Cache-Control"] = "max-age=0"
-headers["Connection"] = "keep-alive"
-headers["Cookie"] = "bid=%s" % ("".join(random.sample(string.ascii_letters + string.digits, 11)))
-headers["Host"] = "movie.douban.com"
-headers["Referer"] = "http://movie.douban.com/"
-headers["Upgrade-Insecure-Requests"] = '1'
-headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
+# headers = {}
+# headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+# headers["Accept-Encoding"] = "gzip, deflate, sdch"
+# headers["Accept-Language"] = "zh-CN,zh;q=0.8,en;q=0.6,zh-TW;q=0.4,ja;q=0.2"
+# # headers["Cache-Control"] = "max-age=0"
+# headers["Connection"] = "keep-alive"
+# headers["Host"] = "movie.douban.com"
+# headers["Referer"] = "http://movie.douban.com/"
+# headers["Upgrade-Insecure-Requests"] = '1'
+# headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
 
 
-user_agent = ['Mozilla/5.0 (Linux; Android 4.1.1; Nexus 7 Build/JRO03D) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166  Safari/535.19',
-              'Mozilla/5.0 (Linux; U; Android 4.0.4; en-gb; GT-I9300 Build/IMM76D) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30',
-              'Mozilla/5.0 (Linux; U; Android 2.2; en-gb; GT-P1000 Build/FROYO) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1',
-              'Mozilla/5.0 (Android; Mobile; rv:14.0) Gecko/14.0 Firefox/14.0',
-              'Mozilla/5.0 (Android; Tablet; rv:14.0) Gecko/14.0 Firefox/14.0',
-              '	Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:21.0) Gecko/20100101 Firefox/21.0',
-              'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:21.0) Gecko/20130331 Firefox/21.0',
-              'Mozilla/5.0 (Windows NT 6.2; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0',
-              'Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19',
-              'Mozilla/5.0 (Linux; Android 4.1.2; Nexus 7 Build/JZ054K) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Safari/535.19',
-              'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.93 Safari/537.36',
-              'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.11 (KHTML, like Gecko) Ubuntu/11.10 Chromium/27.0.1453.93 Chrome/27.0.1453.93 Safari/537.36',
-              'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.94 Safari/537.36',
-              'Mozilla/5.0 (iPhone; CPU iPhone OS 6_1_4 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) CriOS/27.0.1453.10 Mobile/10B350 Safari/8536.25',
-              'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)',
-              'Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; Trident/5.0)',
-              'Mozilla/5.0 (compatible; WOW64; MSIE 10.0; Windows NT 6.2)',
-              'Opera/9.80 (Macintosh; Intel Mac OS X 10.6.8; U; en) Presto/2.9.168 Version/11.52',
-              'Opera/9.80 (Windows NT 6.1; WOW64; U; en) Presto/2.10.229 Version/11.62',
-              'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_6; en-US) AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27',
-              'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/533.20.25 (KHTML, like Gecko) Version/5.0.4 Safari/533.20.27',
-              'Mozilla/5.0 (iPad; CPU OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3',
-              'Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3'
-              ]
-
-proxies = [
-            "61.145.194.26:8080",
-            '123.114.206.113:8118',
-            '112.251.212.91:8118',
-            '183.154.52.48:8118',
-            '116.199.115.78:80',
-            '118.193.26.18:8080',
-            '47.97.176.119:1080',
-            '183.163.41.21:45619',
-            '58.87.87.142:80',
-            '222.169.193.162:8099',
-            '116.211.123.138:80',
-            '140.143.222.105:1080',
-            '120.92.118.127:8080'
+USER_AGENT = [
+        'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+        'Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)',
+        'DuckDuckBot/1.0; (+http://duckduckgo.com/duckduckbot.html)',
+        'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)',
+        'Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)',
+        'ia_archiver (+http://www.alexa.com/site/help/webmasters; crawler@alexa.com)'
+    ]
+proxy = [
+            "177.190.197.123:3128",
+            '189.112.11.60:8082',
+            '34.249.20.9:3128',
+            '123.138.89.133:9999',
+            '183.88.69.122:8080',
+            '114.215.95.188:3128',
+            '177.190.197.123:3128',
+            '178.132.3.175:1080'
           ]
 
 def getAllMovie():
     # 获取所有标签
     tags = []
     url = 'https://movie.douban.com/j/search_tags?type=movie'
-    response = requests.get(url,  headers=headers)
+    headers = {'User-Agent': random.choice(USER_AGENT)}
+    proxies = {
+        'https': 'https://'+random.choice(proxy)
+    }
+    response = requests.get(url,  headers=headers, proxies=proxies)
     result = json.loads(response.text)
     tags = result['tags']
 
@@ -103,17 +85,35 @@ def write_csv(result):
         writer = csv.writer(csvfile)
         writer.writerow(result)
 
-def getProxy():
-    index = random.randint(0, len(proxies))
-    proxy =  {'http': 'http://'+proxies[index]}
-    print('proxy='+proxy)
-    return proxy
+def verify_ip(proxy, http_type):
+    http_url = 'http://www.baidu.com'
+    proxy_url = 'http://'+proxy
+    has_https = False
+    if 'HTTPS' in http_type:
+        has_https = True
+        proxy_url = 'https://'+proxy
 
-def getHeader():
-    index = random.randint(0, len(user_agent))
-    headers['User-Agent'] = user_agent[index]
-    return headers
-
+    if has_https:
+        proxies={
+            'https':proxy_url
+        }
+    else:
+        proxies = {
+            'http': proxy_url
+        }
+    print('proxy_url = %s' %proxies)
+    try:
+        r = requests.get(http_url, proxies=proxies)
+    except Exception as e:
+        print('invalid ip',e)
+        return False
+    else:
+        if r.status_code>=200 and r.status_code<300:
+            print('IP:%s is Valid' %proxy)
+            return True
+        else:
+            print('IP:%s is Invalid' % proxy)
+            return False
 
 def getMovieDetail(line):
     try:
@@ -122,8 +122,11 @@ def getMovieDetail(line):
         title = line[1]
         url = line[2]
         rate = line[3].rstrip('\n')
-
-        response = requests.get(url, headers=headers)
+        headers = {'User-Agent': random.choice(USER_AGENT)}
+        proxies = {
+            'https': 'https://' + random.choice(proxy)
+        }
+        response = requests.get(url, headers=headers, proxies=proxies)
         html = BeautifulSoup(response.content, 'lxml')
         info = html.select('#info')[0].get_text().split('\n')
         # print(info)
@@ -175,7 +178,7 @@ def getMovieDetail(line):
         return result
     except:
         print('error!!! %s' % line)
-        time.sleep(300)
+        time.sleep(3)
         getMovieDetail(line)
 
 def getMovie():
@@ -193,7 +196,7 @@ def getMovie():
             write_csv(getMovieDetail(line))
             sleep_time = random.randint(3, 10)
             if lineNo%100==0:
-                sleep_time = 60
+                sleep_time = 10
             print('sleep %d' % sleep_time)
             time.sleep(sleep_time)
 

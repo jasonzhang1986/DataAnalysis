@@ -32,4 +32,8 @@ def getAllMovie():
                 print('retry count = %d' %count)
         time.sleep(0.5)
 
-getAllMovie()
+def getMovieDetail():
+    pass
+
+# getAllMovie()
+getMovieDetail()
