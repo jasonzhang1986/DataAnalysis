@@ -8,64 +8,70 @@ import time
 from bs4 import BeautifulSoup
 import random
 
-# headers = {}
-# headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-# headers["Accept-Encoding"] = "gzip, deflate, sdch"
-# headers["Accept-Language"] = "zh-CN,zh;q=0.8,en;q=0.6,zh-TW;q=0.4,ja;q=0.2"
-# # headers["Cache-Control"] = "max-age=0"
-# headers["Connection"] = "keep-alive"
-# headers["Host"] = "movie.douban.com"
-# headers["Referer"] = "http://movie.douban.com/"
-# headers["Upgrade-Insecure-Requests"] = '1'
-# headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
 
+# USER_AGENT = [
+#         'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+#         'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+#         'Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)',
+#         'DuckDuckBot/1.0; (+http://duckduckgo.com/duckduckbot.html)',
+#         'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)',
+#         'Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)',
+#         'ia_archiver (+http://www.alexa.com/site/help/webmasters; crawler@alexa.com)'
+#     ]
 
-USER_AGENT = [
-        'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-        'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)',
-        'Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)',
-        'DuckDuckBot/1.0; (+http://duckduckgo.com/duckduckbot.html)',
-        'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)',
-        'Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)',
-        'ia_archiver (+http://www.alexa.com/site/help/webmasters; crawler@alexa.com)'
-    ]
-proxy = [
-            "177.190.197.123:3128",
-            '189.112.11.60:8082',
-            '34.249.20.9:3128',
-            '123.138.89.133:9999',
-            '183.88.69.122:8080',
-            '114.215.95.188:3128',
-            '177.190.197.123:3128',
-            '178.132.3.175:1080'
-          ]
+headers = {}
+headers["Accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+headers["Accept-Encoding"] = "gzip, deflate, sdch"
+headers["Accept-Language"] = "zh-CN,zh;q=0.8,en;q=0.6,zh-TW;q=0.4,ja;q=0.2"
+# headers["Cache-Control"] = "max-age=0"
+headers["Connection"] = "keep-alive"
+headers["Host"] = "movie.douban.com"
+headers["Referer"] = "http://movie.douban.com/"
+headers["Upgrade-Insecure-Requests"] = '1'
+headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
+
+# headers = [
+#             {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0'},
+#             {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'},
+#             {'User-Agent': 'Mozilla/5.0 (Windows NT 6.2) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.12 Safari/535.11'},
+#             {'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)'},
+#             {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:40.0) Gecko/20100101 Firefox/40.0'},
+#             {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/44.0.2403.89 Chrome/44.0.2403.89 Safari/537.36'}
+#         ]
+
+def write_txt(msg):
+    print(msg)
+    outputFile = 'douban_movie_2.txt'
+    with open(outputFile, 'a',encoding='utf-8') as f:
+        f.write(msg)
 
 def getAllMovie():
     # 获取所有标签
-    tags = []
-    url = 'https://movie.douban.com/j/search_tags?type=movie'
-    headers = {'User-Agent': random.choice(USER_AGENT)}
-    proxies = {
-        'https': 'https://'+random.choice(proxy)
-    }
-    response = requests.get(url,  headers=headers, proxies=proxies)
-    result = json.loads(response.text)
-    tags = result['tags']
+    tags = ['爱情','喜剧','科幻','动作','悬疑','犯罪','恐怖','青春','励志','战争','文艺','黑色幽默','传记','情色','暴力','音乐','家庭']
+
+    # headers = {'User-Agent': random.choice(USER_AGENT)}
 
     print(tags)
 
-    outputFile = 'douban_movie.txt'
-    fw = open(outputFile, 'w')
-    fw.write('id;title;url;rate\n')
+    write_txt('id;title;url;rate\n')
 
     for tag in tags:
         print("Crawl movies with tag: %s" % tag)
         start = 0
         while True:
-            url = "http://movie.douban.com/j/search_subjects?type=movie&tag=%s&page_limit=20&page_start=%d" %(tag,start)
+            if tag=='爱情' and start<5100:
+                start = 5100
+                continue
+            url = 'https://movie.douban.com/j/new_search_subjects?sort=T&range=0,10&tags=%s&start=%d' %(tag,start)
             print('url = ' + url)
-            response = requests.get(url,  headers=headers)
-            movies = json.loads(response.text)['subjects']
+            try:
+                response = requests.get(url,  headers=headers, timeout=5)
+            except Exception as e:
+                print(e)
+                time.sleep(5)
+                continue
+
+            movies = json.loads(response.text)['data']
             if len(movies) == 0:
                 break
             for item in movies:
@@ -73,12 +79,11 @@ def getAllMovie():
                 title = item['title']
                 url = item['url']
                 movieId = item['id']
-                record = str(movieId) + ';' + title + ';' + url + ';' + str(rate) + '\n'
-                fw.write(record)
+                record = tag + ';' + str(movieId) + ';' + title + ';' + url + ';' + str(rate) + '\n'
+                write_txt(record)
                 print(tag + '\t' + title)
             start = start + 20
-            time.sleep(3)
-    fw.close()
+            time.sleep(random.randint(1,3))
 
 def write_csv(result):
     with open('douban_movie.csv', 'a', encoding='gb18030', newline='') as csvfile:
@@ -124,7 +129,7 @@ def getMovieDetail(line):
         rate = line[3].rstrip('\n')
         headers = {'User-Agent': random.choice(USER_AGENT)}
         proxies = {
-            'https': 'https://' + random.choice(proxy)
+            # 'https': 'https://' + random.choice(proxy)
         }
         response = requests.get(url, headers=headers, proxies=proxies)
         html = BeautifulSoup(response.content, 'lxml')
@@ -202,3 +207,4 @@ def getMovie():
 
 
 # getMovie()
+getAllMovie()
