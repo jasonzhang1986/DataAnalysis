@@ -55,23 +55,26 @@ def getAllMovie():
 
     write_txt('id;title;url;rate\n')
 
+    tmp_tag = '音乐'
+    tmp_index = 1140
     for tag in tags:
         print("Crawl movies with tag: %s" % tag)
         start = 0
         while True:
-            if tag=='爱情' and start<5100:
-                start = 5100
-                continue
+            if tags.index(tag) < tags.index(tmp_tag):
+                break
+            elif tag == tmp_tag and start<tmp_index:
+                start = tmp_index
             url = 'https://movie.douban.com/j/new_search_subjects?sort=T&range=0,10&tags=%s&start=%d' %(tag,start)
             print('url = ' + url)
             try:
                 response = requests.get(url,  headers=headers, timeout=5)
+                movies = json.loads(response.text)['data']
             except Exception as e:
                 print(e)
                 time.sleep(5)
                 continue
 
-            movies = json.loads(response.text)['data']
             if len(movies) == 0:
                 break
             for item in movies:
@@ -86,7 +89,7 @@ def getAllMovie():
             time.sleep(random.randint(1,3))
 
 def write_csv(result):
-    with open('douban_movie.csv', 'a', encoding='gb18030', newline='') as csvfile:
+    with open('douban_movie_22.csv', 'a', encoding='utf_8_sig', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(result)
 
@@ -127,11 +130,11 @@ def getMovieDetail(line):
         title = line[1]
         url = line[2]
         rate = line[3].rstrip('\n')
-        headers = {'User-Agent': random.choice(USER_AGENT)}
+        # headers = {'User-Agent': random.choice(USER_AGENT)}
         proxies = {
             # 'https': 'https://' + random.choice(proxy)
         }
-        response = requests.get(url, headers=headers, proxies=proxies)
+        response = requests.get(url, headers=headers)
         html = BeautifulSoup(response.content, 'lxml')
         info = html.select('#info')[0].get_text().split('\n')
         # print(info)
@@ -153,9 +156,10 @@ def getMovieDetail(line):
             elif item[0] == '制片国家/地区':
                 district = item[-1].strip()
             elif item[0] == '上映日期':
-                showtime = item[-1].strip()
+                showtime = item[-1].strip().split('-')[0]
             elif item[0] == '片长':
                 length = item[-1].strip()
+                length = re.findall('\d+', length)[0]
 
         rate_count = html.select(
             '#interest_sectl > div.rating_wrap.clearbox > div.rating_self.clearfix > div > div.rating_sum > a > span')[
@@ -164,19 +168,19 @@ def getMovieDetail(line):
         # interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-child(1) > span.rating_per
         rate5 = html.select(
             '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(1) > span.rating_per')[
-            0].get_text()
+            0].get_text().split('%')[0]
         rate4 = html.select(
             '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(2) > span.rating_per')[
-            0].get_text()
+            0].get_text().split('%')[0]
         rate3 = html.select(
             '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(3) > span.rating_per')[
-            0].get_text()
+            0].get_text().split('%')[0]
         rate2 = html.select(
             '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(4) > span.rating_per')[
-            0].get_text()
+            0].get_text().split('%')[0]
         rate1 = html.select(
             '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(5) > span.rating_per')[
-            0].get_text()
+            0].get_text().split('%')[0]
 
         result = [title, director, actor, showtime, length, district, category, rate, rate_count, rate5, rate4, rate3,
                   rate2, rate1]
@@ -189,22 +193,22 @@ def getMovieDetail(line):
 def getMovie():
     lineNo = 0
     result_title = ['名字', '导演', '主演', '年份', '时长', '国家', '类型', '评分','评论人数', '五星','四星','三星','二星','一星']
-    with open('douban_movie.txt', 'r') as f:
+    with open('douban_movie_2.txt', 'r') as f:
         for line in f.readlines():
             lineNo += 1
-            if lineNo < 699:
-                continue
+            # if lineNo < 699:
+            #     continue
             if lineNo==1:
                 write_csv(result_title)
                 continue
             print('%d %s' %(lineNo, line))
             write_csv(getMovieDetail(line))
-            sleep_time = random.randint(3, 10)
-            if lineNo%100==0:
+            sleep_time = random.randint(1, 3)
+            if lineNo%500==0:
                 sleep_time = 10
             print('sleep %d' % sleep_time)
             time.sleep(sleep_time)
 
 
-# getMovie()
-getAllMovie()
+getMovie()
+# getAllMovie()
