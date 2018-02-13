@@ -7,7 +7,9 @@ import json
 import time
 from bs4 import BeautifulSoup
 import random
-
+import pickle
+import os
+import mysql.connector
 
 # USER_AGENT = [
 #         'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
@@ -45,26 +47,44 @@ def write_txt(msg):
     with open(outputFile, 'a',encoding='utf-8') as f:
         f.write(msg)
 
+
+def load_tmp():
+    with open(os.path.join(os.getcwd(), 'temp.txt'), 'rb') as f:
+        d = pickle.load(f)
+        return d
+
+def save_tmp(tag, index):
+    a = {"tag": tag, "index": index}
+    with open('temp.txt', 'wb') as f:
+        pickle.dump(a, f)
+
 def getAllMovie():
     # 获取所有标签
-    tags = ['爱情','喜剧','科幻','动作','悬疑','犯罪','恐怖','青春','励志','战争','文艺','黑色幽默','传记','情色','暴力','音乐','家庭']
+    tags = ['剧情','爱情','喜剧','科幻','动作','悬疑','犯罪','恐怖','青春','励志','战争','文艺','黑色幽默','传记','情色','暴力','音乐','家庭']
 
     # headers = {'User-Agent': random.choice(USER_AGENT)}
 
     print(tags)
 
+    retry = True
+
     write_txt('id;title;url;rate\n')
 
-    tmp_tag = '音乐'
-    tmp_index = 1140
     for tag in tags:
         print("Crawl movies with tag: %s" % tag)
         start = 0
         while True:
-            if tags.index(tag) < tags.index(tmp_tag):
-                break
-            elif tag == tmp_tag and start<tmp_index:
-                start = tmp_index
+            if retry:
+                retry = False
+                d = load_tmp()
+                print(d)
+                if tags.index(tag) < tags.index(d['tag']):
+                    break
+                elif tag == d['tag'] and start<d['index']:
+                    start = d['index']
+
+            save_tmp(tag, start)
+
             url = 'https://movie.douban.com/j/new_search_subjects?sort=T&range=0,10&tags=%s&start=%d' %(tag,start)
             print('url = ' + url)
             try:
@@ -82,9 +102,15 @@ def getAllMovie():
                 title = item['title']
                 url = item['url']
                 movieId = item['id']
-                record = tag + ';' + str(movieId) + ';' + title + ';' + url + ';' + str(rate) + '\n'
-                write_txt(record)
-                print(tag + '\t' + title)
+                star = item['star']
+                # record = [title, movieId, url, rate, star]
+                # getDetail(record)
+                line = tag + ';' + str(movieId) + ';' + title + ';' + url + ';' + str(rate) + ";" + str(star)
+                print(line)
+                record = getMovieDetail(line)
+                write_csv(record)
+                # write_txt(record)
+                # print(tag + '\t' + title)
             start = start + 20
             time.sleep(random.randint(1,3))
 
@@ -126,10 +152,12 @@ def verify_ip(proxy, http_type):
 def getMovieDetail(line):
     try:
         line = line.split(';')
-        movieId = line[0]
-        title = line[1]
-        url = line[2]
-        rate = line[3].rstrip('\n')
+        tag = line[0]
+        movieId = line[1]
+        title = line[2]
+        url = line[3]
+        rate = line[4]
+        star = line[5].rstrip('\n')
         # headers = {'User-Agent': random.choice(USER_AGENT)}
         proxies = {
             # 'https': 'https://' + random.choice(proxy)
@@ -182,8 +210,9 @@ def getMovieDetail(line):
             '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(5) > span.rating_per')[
             0].get_text().split('%')[0]
 
-        result = [title, director, actor, showtime, length, district, category, rate, rate_count, rate5, rate4, rate3,
+        result = [tag, movieId, title, director, actor, showtime, length, district, category, star, rate, rate_count, rate5, rate4, rate3,
                   rate2, rate1]
+        print(result)
         return result
     except:
         print('error!!! %s' % line)
@@ -210,5 +239,15 @@ def getMovie():
             time.sleep(sleep_time)
 
 
-getMovie()
+conn = mysql.connector.connect(user='root', password='password')
+cursor = conn.cursor()
+cursor.execute('CREATE DATABASE IF NOT EXISTS douban DEFAULT CHARSET utf8')
+cursor.execute('USE douban')
+sql = 'create table if not exist movie_list" ( id int(11) NOT NULL, title varchar(100) NOT NULL, directors varchar(200),rate varchar(10),star int(2),actors varchar(200),cover varchar(200),PRIMARY KEY  ("id")'
+cursor.execute(sql)
+
+cursor.execute('insert into movie_list (id, title, directors, rate, start, actors, cover) values (%d, %s, %s, %s, %d, %s, %s)' %())
+
+# getMovie()
 # getAllMovie()
+# save_tmp('剧情',600)
