@@ -48,10 +48,38 @@ def write_txt(msg):
         f.write(msg)
 
 
+def write_db(tag, movieid, title, directors, actors, rate, star, cover):
+    title = title.replace(r'"', '')
+    conn = mysql.connector.connect(user='root', password='password')
+    cursor = conn.cursor()
+    cursor.execute('CREATE DATABASE IF NOT EXISTS douban DEFAULT CHARSET utf8')
+    cursor.execute('USE douban')
+    sql = 'create table IF NOT EXISTS movielist (movieid int(11) NOT NULL, tag varchar(10), title varchar(100) NOT NULL, directors varchar(200), actors varchar(200), rate varchar(10), star int(2), cover varchar(200));'
+    cursor.execute(sql)
+
+    sql = 'select * from movielist where movieid = \'%s\'' %movieid
+    print(sql)
+    cursor.execute(sql)
+    values = cursor.fetchall()
+    if len(values) > 0:
+        return
+
+    sql = r'insert into movielist (movieid, tag, title, directors, actors, rate, star, cover) values ("%d", "%s", "%s", "%s", "%s", "%s", "%d", "%s")' % (
+    int(movieid), tag, title, directors, actors, rate, int(star), cover)
+    print(sql)
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
+
+
 def load_tmp():
-    with open(os.path.join(os.getcwd(), 'temp.txt'), 'rb') as f:
-        d = pickle.load(f)
-        return d
+    d = {'tag':'剧情', 'index':0}
+    try:
+        with open(os.path.join(os.getcwd(), 'temp.txt'), 'rb') as f:
+            d = pickle.load(f)
+    except Exception as e:
+        print(e)
+    return d
 
 def save_tmp(tag, index):
     a = {"tag": tag, "index": index}
@@ -70,19 +98,19 @@ def getAllMovie():
 
     write_txt('id;title;url;rate\n')
 
+    retry_count = 20
     for tag in tags:
         print("Crawl movies with tag: %s" % tag)
         start = 0
         while True:
             if retry:
-                retry = False
                 d = load_tmp()
                 print(d)
                 if tags.index(tag) < tags.index(d['tag']):
                     break
                 elif tag == d['tag'] and start<d['index']:
                     start = d['index']
-
+            retry = False
             save_tmp(tag, start)
 
             url = 'https://movie.douban.com/j/new_search_subjects?sort=T&range=0,10&tags=%s&start=%d' %(tag,start)
@@ -91,24 +119,49 @@ def getAllMovie():
                 response = requests.get(url,  headers=headers, timeout=5)
                 movies = json.loads(response.text)['data']
             except Exception as e:
+                retry_count = retry_count-1
+                if retry_count == 0:
+                    return
                 print(e)
                 time.sleep(5)
                 continue
 
+            retry_count = 20
             if len(movies) == 0:
                 break
             for item in movies:
+                print(item)
                 rate = item['rate']
                 title = item['title']
                 url = item['url']
                 movieId = item['id']
                 star = item['star']
+                directors = item['directors']
+                cover = item['cover']
+                if directors and len(directors)>0:
+                    directors = ','.join(directors)
+                    if len(directors) > 200:
+                        directors = directors[:200]
+                else:
+                    directors=''
+                directors = directors.replace(r'"', r"'")
+
+                actors = item['casts']
+                if actors and len(actors)>0:
+                    actors = ','.join(actors)
+                    if len(actors) > 200:
+                        actors = actors[:200]
+                else:
+                    actors = ''
+                actors = actors.replace(r'"', r"'")
+
                 # record = [title, movieId, url, rate, star]
                 # getDetail(record)
-                line = tag + ';' + str(movieId) + ';' + title + ';' + url + ';' + str(rate) + ";" + str(star)
+                line = tag + ';' + str(movieId) + ';' + title + ';' + url + ';' + str(rate) + ";" + str(star) + ';' + directors + ';' + actors
                 print(line)
-                record = getMovieDetail(line)
-                write_csv(record)
+                # record = getMovieDetail(line)
+                # write_csv(record)
+                write_db(tag, movieId, title, directors, actors, rate, star, cover)
                 # write_txt(record)
                 # print(tag + '\t' + title)
             start = start + 20
@@ -239,25 +292,6 @@ def getMovie():
             time.sleep(sleep_time)
 
 
-conn = mysql.connector.connect(user='root', password='password')
-cursor = conn.cursor()
-cursor.execute('CREATE DATABASE IF NOT EXISTS douban DEFAULT CHARSET utf8')
-cursor.execute('USE douban')
-sql = 'create table IF NOT EXISTS movielist (movieid int(11) NOT NULL, title varchar(100) NOT NULL, directors varchar(200), rate varchar(10), star int(2), actors varchar(200), cover varchar(200));'
-cursor.execute(sql)
-
-movieid = 1292052
-title = '肖申克的救赎'
-directors = '弗兰克·德拉邦特'
-rate = '9.6'
-star = 50
-actors = '演员'
-cover = 'http://www.baidu.com'
-sql = 'insert into movielist (movieid, title, directors, rate, star, actors, cover) values (\'%d\', \'%s\', \'%s\', \'%s\', \'%d\', \'%s\', \'%s\')'  %(movieid, title, directors, rate,star, actors, cover)
-print(sql)
-cursor.execute(sql)
-conn.commit()
-conn.close()
 # getMovie()
-# getAllMovie()
-# save_tmp('剧情',600)
+getAllMovie()
+# save_tmp('爱情',1080)
