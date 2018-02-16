@@ -86,6 +86,20 @@ def save_tmp(tag, index):
     with open('temp.txt', 'wb') as f:
         pickle.dump(a, f)
 
+def load_db_lineNo():
+    d = {'lineNo':0}
+    try:
+        with open(os.path.join(os.getcwd(), 'lineNo.txt'), 'rb') as f:
+            d = pickle.load(f)
+    except Exception as e:
+        print(e)
+    return d
+
+def save_db_lineNo(lineNo):
+    a = {'lineNo':lineNo}
+    with open('lineNo.txt', 'wb') as f:
+        pickle.dump(a, f)
+
 def getAllMovie():
     # 获取所有标签
     tags = ['剧情','爱情','喜剧','科幻','动作','悬疑','犯罪','恐怖','青春','励志','战争','文艺','黑色幽默','传记','情色','暴力','音乐','家庭']
@@ -272,6 +286,71 @@ def getMovieDetail(line):
         time.sleep(3)
         getMovieDetail(line)
 
+
+retry_count = 20
+def getMovieDetail2(movie):
+    global retry_count
+    try:
+        movieid = movie[0]
+        tag = movie[1]
+        title = movie[2]
+        director = movie[3]
+        actor = movie[4]
+        rate = movie[5]
+        star = movie[6]
+        cover = movie[7]
+        url = 'https://movie.douban.com/subject/%d/' %movieid
+        response = requests.get(url, headers=headers)
+        html = BeautifulSoup(response.content, 'lxml')
+        info = html.select('#info')[0].get_text().split('\n')
+        # print(info)
+        # print(len(info))
+        category = ''
+        district = ''
+        showtime = ''
+        length = ''
+        for item in info:
+            item = item.split(':')
+            if item[0] == '类型':
+                category = item[-1].strip()
+            elif item[0] == '制片国家/地区':
+                district = item[-1].strip()
+            elif item[0] == '上映日期':
+                showtime = item[-1].strip().split('-')[0]
+            elif item[0] == '片长':
+                length = item[-1].strip()
+                length = re.findall('\d+', length)[0]
+
+        category = category.replace(r'/',',')
+        rate_count = html.select(
+            '#interest_sectl > div.rating_wrap.clearbox > div.rating_self.clearfix > div > div.rating_sum > a > span')[
+            0].get_text()
+
+        # interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-child(1) > span.rating_per
+        rate5 = html.select(
+            '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(1) > span.rating_per')[
+            0].get_text().split('%')[0]
+        rate4 = html.select(
+            '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(2) > span.rating_per')[
+            0].get_text().split('%')[0]
+        rate3 = html.select(
+            '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(3) > span.rating_per')[
+            0].get_text().split('%')[0]
+        rate2 = html.select(
+            '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(4) > span.rating_per')[
+            0].get_text().split('%')[0]
+        rate1 = html.select(
+            '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(5) > span.rating_per')[
+            0].get_text().split('%')[0]
+
+        result = [movieid, tag, title, director, actor, showtime, length, district, category, star, rate, int(rate_count), rate5, rate4, rate3,
+                  rate2, rate1, cover]
+        print(result)
+        return result
+    except:
+        print('error!!! %s' % movie)
+        return None
+
 def getMovie():
     lineNo = 0
     result_title = ['名字', '导演', '主演', '年份', '时长', '国家', '类型', '评分','评论人数', '五星','四星','三星','二星','一星']
@@ -292,6 +371,82 @@ def getMovie():
             time.sleep(sleep_time)
 
 
+def getMovieFromDb(lineNo):
+    movie = None
+    conn = mysql.connector.connect(user='root', password='password')
+    cursor = conn.cursor()
+    cursor.execute('USE douban')
+
+    sql = r'select * from movielist limit %d,1' %lineNo
+    print(sql)
+    cursor.execute(sql)
+    movie = cursor.fetchone()
+    conn.commit()
+    conn.close()
+    return movie
+
+def getMovieCount():
+    conn = mysql.connector.connect(user='root', password='password')
+    cursor = conn.cursor()
+    cursor.execute('USE douban')
+
+    sql = r'select count(*) from movielist'
+    print(sql)
+    cursor.execute(sql)
+    result = cursor.fetchone()
+    conn.commit()
+    conn.close()
+    return result[0]
+
+def saveMovieDetail(movie):
+    print(movie)
+    conn = mysql.connector.connect(user='root', password='password')
+    cursor = conn.cursor()
+    cursor.execute('CREATE DATABASE IF NOT EXISTS douban DEFAULT CHARSET utf8')
+    cursor.execute('USE douban')
+    #movieid,tag, title, director, actor, showtime, length, district, category, star, rate, rate_count, rate5, rate4, rate3,rate2, rate1
+    sql = 'create table IF NOT EXISTS moviedetail (movieid int(11) NOT NULL, tag varchar(10), title varchar(100) NOT NULL, directors varchar(200), actors varchar(200), showtime varchar(20), length varchar(5), district varchar(50), category varchar(30), star int(2), rate varchar(10), rate_count int(12), rate5 varchar(6), rate4 varchar(6), rate3 varchar(6), rate2 varchar(6), rate1 varchar(6), cover varchar(200));'
+    cursor.execute(sql)
+
+    sql = 'select * from moviedetail where movieid = \'%d\'' % movie[0]
+    print(sql)
+    cursor.execute(sql)
+    values = cursor.fetchall()
+    if len(values) > 0:
+        print("alread exists %d" %movie[0])
+        return
+    sql = r'insert into moviedetail (movieid, tag, title, directors, actors, showtime, length, district, category, star, rate, rate_count, rate5, rate4, rate3, rate2, rate1, cover) values ("%d", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%d", "%s", "%d", "%s", "%s", "%s", "%s", "%s", "%s")' % (
+        movie[0], movie[1], movie[2], movie[3], movie[4], movie[5], movie[6],movie[7], movie[8],movie[9],movie[10],movie[11],movie[12],movie[13],movie[14],movie[15],movie[16],movie[17])
+    print(sql)
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
+
+def getMovies():
+    movie_count = getMovieCount()
+    lineNo = load_db_lineNo()['lineNo']
+    print('lineNo = %d' %lineNo)
+    while lineNo < movie_count:
+        retry_count = 20
+        movie = getMovieFromDb(lineNo)
+        movie_detail = None
+        while retry_count > 0:
+            retry_count -= 1
+            movie_detail = getMovieDetail2(movie)
+            if movie_detail:
+                saveMovieDetail(movie_detail)
+                break
+            else:
+                time.sleep(random.randint(1, 3))
+
+        if movie_detail is None:
+            return
+
+        lineNo += 1
+        save_db_lineNo(lineNo)
+
+
 # getMovie()
-getAllMovie()
+# getAllMovie()
 # save_tmp('爱情',1080)
+getMovies()
