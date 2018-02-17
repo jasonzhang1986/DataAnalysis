@@ -289,6 +289,7 @@ def getMovieDetail(line):
 
 retry_count = 20
 def getMovieDetail2(movie):
+    print('getMovieDetail ', movie)
     global retry_count
     try:
         movieid = movie[0]
@@ -301,54 +302,75 @@ def getMovieDetail2(movie):
         cover = movie[7]
         url = 'https://movie.douban.com/subject/%d/' %movieid
         response = requests.get(url, headers=headers)
-        html = BeautifulSoup(response.content, 'lxml')
-        info = html.select('#info')[0].get_text().split('\n')
-        # print(info)
-        # print(len(info))
-        category = ''
-        district = ''
-        showtime = ''
-        length = ''
-        for item in info:
-            item = item.split(':')
-            if item[0] == '类型':
-                category = item[-1].strip()
-            elif item[0] == '制片国家/地区':
-                district = item[-1].strip()
-            elif item[0] == '上映日期':
-                showtime = item[-1].strip().split('-')[0]
-            elif item[0] == '片长':
-                length = item[-1].strip()
-                length = re.findall('\d+', length)[0]
+        print('response code = ', response.status_code)
+        # print(response.text)
+        if response.status_code >=200 and response.status_code<300:
+            html = BeautifulSoup(response.content, 'lxml')
+            # print(html.select('#body'))
+            # body = html.select('body')[0].get_text();
+            if '检测到有异常请求从你的 IP 发出' in response.text:
+                print("检测到有异常请求从你的 IP 发出", response.text)
+                return [0]
+            # print(html)
+            info = html.select('#info')
+            if len(info) == 0:
+                return [-2]
+            info = html.select('#info')[0].get_text().split('\n')
+            print(info)
+            # print(len(info))
+            category = ''
+            district = ''
+            showtime = ''
+            length = ''
+            for item in info:
+                item = item.split(':')
+                if item[0] == '类型':
+                    category = item[-1].strip()
+                elif item[0] == '制片国家/地区':
+                    district = item[-1].strip()
+                elif item[0] == '上映日期':
+                    showtime = item[-1].strip().split('-')[0]
+                elif item[0] == '片长':
+                    length = item[-1].strip()
+                    length = re.findall('\d+', length)[0]
 
-        category = category.replace(r'/',',')
-        rate_count = html.select(
-            '#interest_sectl > div.rating_wrap.clearbox > div.rating_self.clearfix > div > div.rating_sum > a > span')[
-            0].get_text()
+            category = category.replace(r'/',',')
+            if len(district) > 0:
+                district = district[:50]
 
-        # interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-child(1) > span.rating_per
-        rate5 = html.select(
-            '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(1) > span.rating_per')[
-            0].get_text().split('%')[0]
-        rate4 = html.select(
-            '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(2) > span.rating_per')[
-            0].get_text().split('%')[0]
-        rate3 = html.select(
-            '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(3) > span.rating_per')[
-            0].get_text().split('%')[0]
-        rate2 = html.select(
-            '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(4) > span.rating_per')[
-            0].get_text().split('%')[0]
-        rate1 = html.select(
-            '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(5) > span.rating_per')[
-            0].get_text().split('%')[0]
+            if len(category) > 0:
+                category = category[:30]
+            rate_count = html.select(
+                '#interest_sectl > div.rating_wrap.clearbox > div.rating_self.clearfix > div > div.rating_sum > a > span')[
+                0].get_text()
 
-        result = [movieid, tag, title, director, actor, showtime, length, district, category, star, rate, int(rate_count), rate5, rate4, rate3,
-                  rate2, rate1, cover]
-        print(result)
-        return result
-    except:
-        print('error!!! %s' % movie)
+            # interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-child(1) > span.rating_per
+            rate5 = html.select(
+                '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(1) > span.rating_per')[
+                0].get_text().split('%')[0]
+            rate4 = html.select(
+                '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(2) > span.rating_per')[
+                0].get_text().split('%')[0]
+            rate3 = html.select(
+                '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(3) > span.rating_per')[
+                0].get_text().split('%')[0]
+            rate2 = html.select(
+                '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(4) > span.rating_per')[
+                0].get_text().split('%')[0]
+            rate1 = html.select(
+                '#interest_sectl > div.rating_wrap.clearbox > div.ratings-on-weight > div:nth-of-type(5) > span.rating_per')[
+                0].get_text().split('%')[0]
+
+            result = [movieid, tag, title, director, actor, showtime, length, district, category, star, rate, int(rate_count), rate5, rate4, rate3,
+                      rate2, rate1, cover]
+            print(result)
+            return result
+        else:
+            return [-1]
+    except Exception as e:
+        # print('error!!! %s' % movie)
+        # print('exception 1')
+        print(e, movie[0],movie[2])
         return None
 
 def getMovie():
@@ -433,8 +455,13 @@ def getMovies():
         while retry_count > 0:
             retry_count -= 1
             movie_detail = getMovieDetail2(movie)
+            print('---', movie_detail)
             if movie_detail:
-                saveMovieDetail(movie_detail)
+                if len(movie_detail) > 1:
+                    saveMovieDetail(movie_detail)
+                elif movie_detail[0]==0:
+                    print('ip 被封了')
+                    return
                 break
             else:
                 time.sleep(random.randint(1, 3))
@@ -448,5 +475,5 @@ def getMovies():
 
 # getMovie()
 # getAllMovie()
-# save_tmp('爱情',1080)
+# save_db_lineNo(6160)
 getMovies()
