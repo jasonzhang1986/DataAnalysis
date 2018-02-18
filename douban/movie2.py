@@ -311,9 +311,13 @@ def getMovieDetail2(movie):
             if '检测到有异常请求从你的 IP 发出' in response.text:
                 print("检测到有异常请求从你的 IP 发出", response.text)
                 return [0]
+            if '<script>var d=[navigator.platform,navigator.userAgent,navigator.vendor].join("|");window.location.href="https://sec.douban.com/a?' in response.text:
+                print("检测到有异常请求从你的 IP 发出", response.text)
+                return [0]
             # print(html)
             info = html.select('#info')
             if len(info) == 0:
+                print(response.text)
                 return [-2]
             info = html.select('#info')[0].get_text().split('\n')
             print(info)
@@ -475,5 +479,5 @@ def getMovies():
 
 # getMovie()
 # getAllMovie()
-# save_db_lineNo(6160)
+# save_db_lineNo(8800)
 getMovies()
