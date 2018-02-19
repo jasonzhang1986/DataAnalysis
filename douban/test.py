@@ -24,14 +24,39 @@ def write_db(ip, type, model, verifytime):
     values = cursor.fetchall()
     if len(values) > 0:
         print('%s exists' %ip)
-        sql = r'update %s SET verifytime = "%s"'% (Table_Name, verifytime)
     else:
         sql = r'insert into %s (ip, type, model, verifytime) values ("%s", "%s", "%s", "%s")' % (Table_Name, ip, type, model, verifytime)
+        print(sql)
+        cursor.execute(sql)
+    conn.commit()
+    conn.close()
+
+def update_ip(ip, verifytime):
+    conn = mysql.connector.connect(user='root', password='password')
+    cursor = conn.cursor()
+    cursor.execute('CREATE DATABASE IF NOT EXISTS proxy DEFAULT CHARSET utf8')
+    cursor.execute('USE %s' % DB_NAME)
+    sql = 'create table IF NOT EXISTS %s (ip varchar(30) NOT NULL, type varchar(10), model varchar(10) NOT NULL, verifytime varchar(30));' % Table_Name
+    cursor.execute(sql)
+    sql = r'update %s SET verifytime = "%s" where ip = "%s"' % (Table_Name, verifytime, ip)
     print(sql)
     cursor.execute(sql)
     conn.commit()
     conn.close()
 
+def delte_ip(ip):
+    conn = mysql.connector.connect(user='root', password='password')
+    cursor = conn.cursor()
+    cursor.execute('CREATE DATABASE IF NOT EXISTS proxy DEFAULT CHARSET utf8')
+    cursor.execute('USE %s' % DB_NAME)
+    sql = 'create table IF NOT EXISTS %s (ip varchar(30) NOT NULL, type varchar(10), model varchar(10) NOT NULL, verifytime varchar(30));' % Table_Name
+    cursor.execute(sql)
+
+    sql = 'delete from %s where ip = \'%s\'' % (Table_Name, ip)
+    print(sql)
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
 
 def fetchProxy(https=False):
     url = proxy_url
@@ -74,19 +99,34 @@ def getProxyCount():
 
 def verifyProxyIP(ip, type):
     print(ip, type)
-    url = 'http://www.baidu.com/'
+    url = 'https://movie.douban.com/'
     proxies = {
-        "http":"http://" + ip,
-        "https":"http://" + ip
+        "http":"http://" + ip
     }
     print(proxies)
-    r = requests.get(url, proxies=proxies)
+    r = requests.get(url, proxies=proxies, timeout=10)
     print(r.status_code)
     if r.status_code==200:
         verifytime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-        write_db(ip, type, '高匿', verifytime)
+        update_ip(ip, verifytime)
+    else:
+        delte_ip(ip)
 
-fetchProxy()
-count = getProxyCount()
-proxy = fetchProxyIPFromDb(random.randint(1,count-1))
-verifyProxyIP(proxy[0], proxy[1])
+while True:
+    fetchProxy()
+    count = getProxyCount()
+    index = count -1
+    while index >= 0:
+        proxy = fetchProxyIPFromDb(index)
+        verifyTime = proxy[3]
+        verifyStmp = time.mktime(time.strptime(verifyTime, '%Y-%m-%d %H:%M:%S'))
+        if time.time() - verifyStmp > 60*30:
+            verifyProxyIP(proxy[0], proxy[1])
+        index -= 1
+        time.sleep(5)
+    print('begin sleep [%s]' %(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))))
+    time.sleep(5*60)
+# proxy = fetchProxyIPFromDb(random.randint(1,count-1))
+
+
+# verifyProxyIP('60.195.198.245:3128', 'http')
