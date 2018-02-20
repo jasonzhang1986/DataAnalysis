@@ -32,14 +32,15 @@ headers["Referer"] = "http://movie.douban.com/"
 headers["Upgrade-Insecure-Requests"] = '1'
 headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36"
 
-# headers = [
-#             {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0'},
-#             {'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'},
-#             {'User-Agent': 'Mozilla/5.0 (Windows NT 6.2) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.12 Safari/535.11'},
-#             {'User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)'},
-#             {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:40.0) Gecko/20100101 Firefox/40.0'},
-#             {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/44.0.2403.89 Chrome/44.0.2403.89 Safari/537.36'}
-#         ]
+USER_AGENT = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36",
+            'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0',
+            'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6',
+            'Mozilla/5.0 (Windows NT 6.2) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.12 Safari/535.11',
+            'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Trident/6.0)',
+            'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:40.0) Gecko/20100101 Firefox/40.0',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/44.0.2403.89 Chrome/44.0.2403.89 Safari/537.36'
+        ]
 
 def write_txt(msg):
     print(msg)
@@ -287,6 +288,32 @@ def getMovieDetail(line):
         getMovieDetail(line)
 
 
+def fetchProxyIPFromDb(lineNo):
+    conn = mysql.connector.connect(user='root', password='password')
+    cursor = conn.cursor()
+    cursor.execute('USE proxy')
+
+    sql = r'select * from proxylist limit %d,1' % (lineNo)
+    print(sql)
+    cursor.execute(sql)
+    proxy = cursor.fetchone()
+    conn.commit()
+    conn.close()
+    return proxy
+
+def getProxyCount():
+    conn = mysql.connector.connect(user='root', password='password')
+    cursor = conn.cursor()
+    cursor.execute('USE proxy')
+
+    sql = r'select count(*) from proxylist'
+    print(sql)
+    cursor.execute(sql)
+    result = cursor.fetchone()
+    conn.commit()
+    conn.close()
+    return result[0]
+
 retry_count = 20
 def getMovieDetail2(movie):
     print('getMovieDetail ', movie)
@@ -301,7 +328,15 @@ def getMovieDetail2(movie):
         star = movie[6]
         cover = movie[7]
         url = 'https://movie.douban.com/subject/%d/' %movieid
-        response = requests.get(url, headers=headers)
+        proxy_count = getProxyCount()
+        # headers['User-Agent'] = random.choice(USER_AGENT)
+        proxy_ip = fetchProxyIPFromDb(random.randint(0,proxy_count-1))[0]
+        proxies = {
+            "http": "http://" + proxy_ip
+        }
+        print(headers)
+        print(proxies)
+        response = requests.get(url, headers=headers, proxies=proxies, timeout=10)
         print('response code = ', response.status_code)
         # print(response.text)
         if response.status_code >=200 and response.status_code<300:

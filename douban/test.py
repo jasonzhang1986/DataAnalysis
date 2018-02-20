@@ -99,7 +99,7 @@ def getProxyCount():
 
 def verifyProxyIP(ip, type):
     print(ip, type)
-    url = 'https://movie.douban.com/'
+    url = 'https://movie.douban.com/subject/8880'
     proxies = {
         "http":"http://" + ip
     }
