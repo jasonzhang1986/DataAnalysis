@@ -107,6 +107,7 @@ def verifyProxyIP(ip, type):
     r = requests.get(url, proxies=proxies, timeout=10)
     print(r.status_code)
     if r.status_code==200:
+        print(r.text)
         verifytime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         update_ip(ip, verifytime)
     else:
