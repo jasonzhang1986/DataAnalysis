@@ -127,7 +127,7 @@ while True:
         time.sleep(5)
     print('begin sleep [%s]' %(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))))
     time.sleep(5*60)
+
+
 # proxy = fetchProxyIPFromDb(random.randint(1,count-1))
-
-
 # verifyProxyIP('60.195.198.245:3128', 'http')
