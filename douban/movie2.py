@@ -293,7 +293,8 @@ def fetchProxyIPFromDb(lineNo):
     cursor = conn.cursor()
     cursor.execute('USE proxy')
 
-    sql = r'select * from proxylist limit %d,1' % (lineNo)
+    # sql = r'select * from proxylist limit %d,1' % (lineNo)
+    sql = r'select * from proxylist_xici limit %d,1' % (lineNo)
     print(sql)
     cursor.execute(sql)
     proxy = cursor.fetchone()
@@ -306,7 +307,7 @@ def getProxyCount():
     cursor = conn.cursor()
     cursor.execute('USE proxy')
 
-    sql = r'select count(*) from proxylist'
+    sql = r'select count(*) from proxylist_xici'
     print(sql)
     cursor.execute(sql)
     result = cursor.fetchone()
@@ -330,9 +331,10 @@ def getMovieDetail2(movie):
         url = 'https://movie.douban.com/subject/%d/' %movieid
         proxy_count = getProxyCount()
         # headers['User-Agent'] = random.choice(USER_AGENT)
-        proxy_ip = fetchProxyIPFromDb(random.randint(0,proxy_count-1))[0]
+        proxy = fetchProxyIPFromDb(random.randint(0,proxy_count-1))
+        print(proxy)
         proxies = {
-            "http": "http://" + proxy_ip
+            "http": "http://" + proxy[0]+":"+proxy[1]
         }
         print(headers)
         print(proxies)
@@ -488,7 +490,7 @@ def getMovies():
     lineNo = load_db_lineNo()['lineNo']
     print('lineNo = %d' %lineNo)
     while lineNo < movie_count:
-        retry_count = 20
+        retry_count = 50
         movie = getMovieFromDb(lineNo)
         movie_detail = None
         while retry_count > 0:
@@ -502,8 +504,8 @@ def getMovies():
                     print('ip 被封了')
                     return
                 break
-            else:
-                time.sleep(random.randint(1, 3))
+            # else:
+            #     time.sleep(1)
 
         if movie_detail is None:
             return
@@ -514,5 +516,5 @@ def getMovies():
 
 # getMovie()
 # getAllMovie()
-# save_db_lineNo(8800)
+# save_db_lineNo(0)
 getMovies()
