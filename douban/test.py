@@ -100,13 +100,13 @@ def getProxyCount():
 
 def verifyProxyIP(ip, type):
     print(ip, type)
-    url = 'https://www.baidu.com'
+    url = 'https://movie.douban.com'
     proxies = {
-        "http":"http://" + ip
+        "https":"https://" + ip
     }
     print(proxies)
     r = requests.get(url, proxies=proxies, timeout=10)
-    print(r.status_code)
+    print(r.status_code, r.text)
     if r.status_code==200:
         # print(r.text)
         verifytime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
@@ -132,7 +132,7 @@ def verifyProxyIP(ip, type):
 #
 # count = getProxyCount()
 # proxy = fetchProxyIPFromDb(random.randint(1,count-1))
-# verifyProxyIP(proxy[0], 'http')
+verifyProxyIP('114.214.162.136:8118', 'https')
 
 #
 # try:
